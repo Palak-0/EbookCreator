@@ -1,0 +1,23 @@
+{
+  "name": "ebookcreator",
+  "version": "1.0.0",
+  "description": "A full-stack web application for creating and managing ebooks with AI-powered content generation features.",
+  "main": "index.js",
+  "scripts": {
+    "render-build": "npm ci --prefix backend && npm ci --prefix frontend && npm run build --prefix frontend",
+    "render-start": "npm run start --prefix backend"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cr1tDev/Ebook-Creator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Cr1tDev/Ebook-Creator/issues"
+  },
+  "homepage": "https://github.com/Cr1tDev/Ebook-Creator#readme",
+  "dependencies": {}
+}
