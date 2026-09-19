@@ -1,6 +1,8 @@
 // For Render (single Web Service) you want SAME-ORIGIN requests in production.
 // Set `VITE_API_URL` for local dev; if it's undefined, fall back to same-origin ("").
-export const BASE_URL = import.meta.env.VITE_API_URL ?? "";
+export const BASE_URL = import.meta.env.PROD
+  ? ""
+  : (import.meta.env.VITE_API_URL ?? "");
 
 export const API_PATHS = {
   AUTH: {
