@@ -181,7 +181,8 @@ const EditorPage = () => {
     } catch (error) {
       console.error(error);
       toast.error(
-        "Failed to generate chapter content. API gemini-2.5-flash-lite reached its limit!",
+        error.response?.data?.message ||
+          "Failed to generate chapter content. Please check your configuration and try again."
       );
     } finally {
       setIsGenerating(false);

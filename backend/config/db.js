@@ -11,9 +11,10 @@ const connectDB = async () => {
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
+    const isLocal = process.env.MONGO_URI.includes("localhost") || process.env.MONGO_URI.includes("127.0.0.1");
     const opts = {
       bufferCommands: false,
-      tls: true, // ensures TLS for Atlas
+      tls: !isLocal, // ensures TLS for Atlas, but disabled for local MongoDB
       tlsAllowInvalidCertificates: false,
     };
 

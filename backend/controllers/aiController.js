@@ -2,6 +2,38 @@ const { GoogleGenAI } = require("@google/genai");
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+const checkApiKeyConfigured = () => {
+  return process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== "dummykey";
+};
+
+const handleGeminiError = (err, res, defaultMessage) => {
+  console.error(defaultMessage + ":", err);
+
+  const isInvalidKey = 
+    (err.status === 400 && err.message && err.message.includes("API key not valid")) ||
+    (err.message && err.message.includes("API_KEY_INVALID")) ||
+    (err.status === 403 && err.message && err.message.includes("API key"));
+
+  if (isInvalidKey) {
+    return res.status(400).json({
+      message: "The configured Gemini API Key is invalid. Please check your GEMINI_API_KEY in the backend/.env file."
+    });
+  }
+
+  const isQuotaExceeded = 
+    err.status === 429 || 
+    (err.message && err.message.toLowerCase().includes("quota exceeded")) ||
+    (err.message && err.message.toLowerCase().includes("limit reached"));
+
+  if (isQuotaExceeded) {
+    return res.status(429).json({
+      message: "Gemini API quota exceeded or rate limit reached. Please try again later."
+    });
+  }
+
+  res.status(500).json({ message: defaultMessage });
+};
+
 // @desc Generate a book outline
 // @route POST /api/ai/generate-outline
 // @access Private
@@ -11,6 +43,12 @@ const generateOutline = async (req, res) => {
 
     if (!topic) {
       return res.status(400).json({ message: "Please provide a topic" });
+    }
+
+    if (!checkApiKeyConfigured()) {
+      return res.status(400).json({
+        message: "Gemini API Key is not configured. Please add a valid GEMINI_API_KEY to your backend/.env file."
+      });
     }
 
     // Updated prompt: force AI to include "Chapter X: ..." in titles
@@ -54,7 +92,7 @@ Now generate the JSON outline.`;
 
     // Generate AI content
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
+      model: "gemini-3.5-flash-lite",
       contents: prompt,
     });
 
@@ -98,10 +136,7 @@ Now generate the JSON outline.`;
       });
     }
   } catch (err) {
-    console.error("Error generating outline:", err);
-    res
-      .status(500)
-      .json({ message: "Server error during AI outline generation" });
+    handleGeminiError(err, res, "Server error during AI outline generation");
   }
 };
 
@@ -122,6 +157,12 @@ const generateChapterContent = async (req, res) => {
         .json({ message: "Please provide a chapter title" });
     }
 
+    if (!checkApiKeyConfigured()) {
+      return res.status(400).json({
+        message: "Gemini API Key is not configured. Please add a valid GEMINI_API_KEY to your backend/.env file."
+      });
+    }
+
     const prompt = `ROLE:
 You are a professional nonfiction book author.
 
@@ -139,13 +180,15 @@ WRITING GUIDELINES:
 - Explain ideas clearly and expand them with examples when helpful.
 - Avoid repetition and filler.
 - Assume the reader is intelligent but may be new to the topic.
+- IMPORTANT: Include 1-2 relatable pictures in the chapter to illustrate key concepts. Insert them using Markdown image syntax pointing to this URL format: '![alt text](https://image.pollinations.ai/prompt/{detailed-image-description})'. For example: '![A futuristic city with flying cars](https://image.pollinations.ai/prompt/a-futuristic-city-with-flying-cars-cinematic-lighting)'. Make sure the descriptions in the URL are URL-safe (use hyphens instead of spaces).
 
 FORMAT RULES (VERY IMPORTANT):
 - DO NOT include the chapter title.
 - DO NOT include headings, bullet lists, or numbered lists.
-- DO NOT include JSON, markdown, or metadata.
-- Output ONLY plain text paragraphs.
-- Separate paragraphs with a single blank line.
+- DO NOT include JSON or metadata.
+- You MAY include Markdown for images ONLY.
+- Output ONLY plain text paragraphs and the markdown images.
+- Separate paragraphs and images with a single blank line.
 
 LENGTH:
 - Write a thorough chapter-length response (not a short summary).
@@ -154,16 +197,13 @@ LENGTH:
 Now write the complete chapter content.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
+      model: "gemini-3.5-flash-lite",
       contents: prompt,
     });
 
     res.status(200).json({ content: response.text });
   } catch (err) {
-    console.error("Error generating chapter:", err);
-    res
-      .status(500)
-      .json({ message: "Server error during AI chapter generation" });
+    handleGeminiError(err, res, "Server error during AI chapter generation");
   }
 };
 

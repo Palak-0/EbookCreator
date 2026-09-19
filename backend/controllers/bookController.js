@@ -13,12 +13,16 @@ const createBook = async (req, res) => {
         .json({ message: "Please provide a title and author" });
     }
 
+    const prompt = `An aesthetic ebook cover for a book titled ${title} by ${author}`;
+    const coverImage = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=800&height=1200&nologo=true`;
+
     const book = await Book.create({
       userId: req.user._id,
       title,
       author,
       subtitle,
       chapters,
+      coverImage,
     });
 
     res.status(201).json(book);
