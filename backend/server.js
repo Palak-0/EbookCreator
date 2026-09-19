@@ -14,8 +14,10 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    // Render/production safe default; lock down via FRONTEND_URL if desired
-    origin: process.env.FRONTEND_URL || "*",
+    origin: [
+      "http://localhost:5173",
+      "https://ebookcreator-frontend-a16v.onrender.com",
+    ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
